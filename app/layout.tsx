@@ -4,6 +4,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { AIAssistantModal } from '@/components/AIAssistantModal';
 
 export const metadata: Metadata = {
   title: 'ReVIBE – AI-Powered Waste-to-Wealth Platform',
@@ -16,13 +17,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen flex flex-col bg-emerald-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-emerald-950">
+    <html lang="en">
+      <body className="min-h-screen flex flex-col bg-[#fbfbf9] text-[#181f1c] antialiased selection:bg-emerald-200 selection:text-emerald-900">
         <AuthProvider>
           <ToastProvider>
             <Navbar />
             <main className="flex-grow">{children}</main>
             <Footer />
+            <AIAssistantModal />
           </ToastProvider>
         </AuthProvider>
       </body>

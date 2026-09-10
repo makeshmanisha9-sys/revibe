@@ -1,133 +1,201 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Calculator, DollarSign, PieChart, TrendingUp, Layers } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Calculator, DollarSign, TrendingUp, Percent, Package, RotateCcw } from 'lucide-react';
 
 interface ProfitCalculatorProps {
+  initialQuantity?: number;
   initialMaterialCost?: number;
   initialAdditionalCost?: number;
   initialSellingPrice?: number;
 }
 
-export const ProfitCalculator: React.FC<ProfitCalculatorProps> = ({
+export function ProfitCalculator({
+  initialQuantity = 10,
   initialMaterialCost = 40,
-  initialAdditionalCost = 40,
-  initialSellingPrice = 300,
-}) => {
-  const [quantity, setQuantity] = useState<number>(10);
+  initialAdditionalCost = 20,
+  initialSellingPrice = 250,
+}: ProfitCalculatorProps) {
+  const [quantity, setQuantity] = useState<number>(initialQuantity);
   const [materialCost, setMaterialCost] = useState<number>(initialMaterialCost);
   const [additionalCost, setAdditionalCost] = useState<number>(initialAdditionalCost);
   const [sellingPrice, setSellingPrice] = useState<number>(initialSellingPrice);
 
-  // Dynamic real-time calculations
-  const unitCost = Math.max(0, materialCost + additionalCost);
-  const totalCost = unitCost * quantity;
-  const revenue = Math.max(0, sellingPrice * quantity);
-  const profit = revenue - totalCost;
-  const profitMargin = revenue > 0 ? (profit / revenue) * 100 : 0;
+  const calculations = useMemo(() => {
+    const q = Math.max(1, Number(quantity) || 1);
+    const mCost = Math.max(0, Number(materialCost) || 0);
+    const aCost = Math.max(0, Number(additionalCost) || 0);
+    const price = Math.max(0, Number(sellingPrice) || 0);
+
+    const costPerUnit = mCost + aCost;
+    const totalCost = costPerUnit * q;
+    const revenue = price * q;
+    const profit = revenue - totalCost;
+    const profitMargin = revenue > 0 ? Number(((profit / revenue) * 100).toFixed(1)) : 0;
+    const profitPerUnit = price - costPerUnit;
+
+    return {
+      costPerUnit,
+      totalCost,
+      revenue,
+      profit,
+      profitMargin,
+      profitPerUnit,
+    };
+  }, [quantity, materialCost, additionalCost, sellingPrice]);
+
+  const handleReset = () => {
+    setQuantity(initialQuantity);
+    setMaterialCost(initialMaterialCost);
+    setAdditionalCost(initialAdditionalCost);
+    setSellingPrice(initialSellingPrice);
+  };
 
   return (
-    <div className="rounded-2xl bg-emerald-950/80 border border-emerald-800 p-6 space-y-6 shadow-xl">
-      <div className="flex items-center gap-2 border-b border-emerald-800/80 pb-4">
-        <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
-          <Calculator className="w-5 h-5" />
+    <div className="p-6 sm:p-8 rounded-3xl bg-white border border-charcoal-200 shadow-soft space-y-6">
+      <div className="flex items-center justify-between border-b border-charcoal-100 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-emerald-100/80 text-emerald-800">
+            <Calculator className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-charcoal-900">
+              Interactive Profit & ROI Calculator
+            </h3>
+            <p className="text-xs text-charcoal-500">Live reactive unit economics formula</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-base font-bold text-white">Interactive Profit Calculator</h3>
-          <p className="text-xs text-emerald-300/70">Real-time financial feasibility modeling</p>
-        </div>
+
+        <button
+          onClick={handleReset}
+          className="p-2 rounded-xl text-charcoal-500 hover:text-charcoal-800 hover:bg-charcoal-100 text-xs font-semibold flex items-center gap-1 transition-colors btn-press"
+          title="Reset to defaults"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Reset</span>
+        </button>
       </div>
 
-      {/* Input Sliders & Number Controls */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="space-y-1.5 p-3 rounded-xl bg-emerald-900/40 border border-emerald-800/60">
-          <label className="text-xs font-semibold text-emerald-200">Quantity (Units)</label>
-          <input
-            type="number"
-            min="1"
-            max="1000"
-            value={quantity}
-            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-            className="w-full bg-emerald-950 border border-emerald-700/80 rounded-lg px-3 py-1.5 text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
-          />
-        </div>
-
-        <div className="space-y-1.5 p-3 rounded-xl bg-emerald-900/40 border border-emerald-800/60">
-          <label className="text-xs font-semibold text-emerald-200">Material Cost (₹/unit)</label>
-          <input
-            type="number"
-            min="0"
-            value={materialCost}
-            onChange={(e) => setMaterialCost(Math.max(0, parseFloat(e.target.value) || 0))}
-            className="w-full bg-emerald-950 border border-emerald-700/80 rounded-lg px-3 py-1.5 text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
-          />
-        </div>
-
-        <div className="space-y-1.5 p-3 rounded-xl bg-emerald-900/40 border border-emerald-800/60">
-          <label className="text-xs font-semibold text-emerald-200">Additional Cost (₹/unit)</label>
-          <input
-            type="number"
-            min="0"
-            value={additionalCost}
-            onChange={(e) => setAdditionalCost(Math.max(0, parseFloat(e.target.value) || 0))}
-            className="w-full bg-emerald-950 border border-emerald-700/80 rounded-lg px-3 py-1.5 text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
-          />
-        </div>
-
-        <div className="space-y-1.5 p-3 rounded-xl bg-emerald-900/40 border border-emerald-800/60">
-          <label className="text-xs font-semibold text-emerald-200">Selling Price (₹/unit)</label>
-          <input
-            type="number"
-            min="0"
-            value={sellingPrice}
-            onChange={(e) => setSellingPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-            className="w-full bg-emerald-950 border border-emerald-700/80 rounded-lg px-3 py-1.5 text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
-          />
-        </div>
-      </div>
-
-      {/* Dynamic Results Display */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1">
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold">
-            <Layers className="w-3.5 h-3.5 text-slate-400" />
-            <span>Total Production Cost</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Input Sliders & Fields */}
+        <div className="space-y-4">
+          {/* Quantity */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <label className="font-bold text-charcoal-700">Production Batch Size (Units)</label>
+              <span className="font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg">
+                {quantity} units
+              </span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="500"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              className="w-full h-2 bg-charcoal-100 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+            />
           </div>
-          <p className="text-xl font-black text-white">₹{totalCost.toLocaleString()}</p>
-          <p className="text-[10px] text-slate-400">(₹{unitCost}/unit × {quantity})</p>
+
+          {/* Raw Material Cost */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <label className="font-bold text-charcoal-700">Raw Waste Material Cost (₹ / unit)</label>
+              <span className="font-mono font-bold text-charcoal-900">₹{materialCost}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="200"
+              value={materialCost}
+              onChange={(e) => setMaterialCost(Number(e.target.value))}
+              className="w-full h-2 bg-charcoal-100 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+            />
+          </div>
+
+          {/* Additional Tooling / Accessories Cost */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <label className="font-bold text-charcoal-700">Additional Materials & Glue (₹ / unit)</label>
+              <span className="font-mono font-bold text-charcoal-900">₹{additionalCost}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="300"
+              value={additionalCost}
+              onChange={(e) => setAdditionalCost(Number(e.target.value))}
+              className="w-full h-2 bg-charcoal-100 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+            />
+          </div>
+
+          {/* Target Selling Price */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <label className="font-bold text-charcoal-700">Target Selling Price (₹ / unit)</label>
+              <span className="font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg">
+                ₹{sellingPrice}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="20"
+              max="2000"
+              step="10"
+              value={sellingPrice}
+              onChange={(e) => setSellingPrice(Number(e.target.value))}
+              className="w-full h-2 bg-charcoal-100 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+            />
+          </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1">
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold">
-            <DollarSign className="w-3.5 h-3.5 text-blue-400" />
-            <span>Total Revenue</span>
-          </div>
-          <p className="text-xl font-black text-blue-300">₹{revenue.toLocaleString()}</p>
-          <p className="text-[10px] text-slate-400">(₹{sellingPrice}/unit × {quantity})</p>
-        </div>
+        {/* Real-time Financial Output Cards */}
+        <div className="flex flex-col justify-between p-5 rounded-2xl bg-charcoal-50/80 border border-charcoal-200 space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs text-charcoal-600 pb-2 border-b border-charcoal-200/80">
+              <span>Total Production Cost:</span>
+              <span className="font-mono font-bold text-charcoal-900">
+                (₹{calculations.costPerUnit} × {quantity}) = ₹{calculations.totalCost}
+              </span>
+            </div>
 
-        <div className="p-4 rounded-xl bg-emerald-950 border border-emerald-700/60 space-y-1">
-          <div className="flex items-center gap-1.5 text-emerald-300 text-xs font-semibold">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Estimated Profit</span>
-          </div>
-          <p className={`text-xl font-black ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            ₹{profit.toLocaleString()}
-          </p>
-          <p className="text-[10px] text-emerald-300/70">(Revenue - Total Cost)</p>
-        </div>
+            <div className="flex items-center justify-between text-xs text-charcoal-600 pb-2 border-b border-charcoal-200/80">
+              <span>Gross Projected Revenue:</span>
+              <span className="font-mono font-bold text-charcoal-900">
+                (₹{sellingPrice} × {quantity}) = ₹{calculations.revenue}
+              </span>
+            </div>
 
-        <div className="p-4 rounded-xl bg-emerald-950 border border-emerald-700/60 space-y-1">
-          <div className="flex items-center gap-1.5 text-emerald-300 text-xs font-semibold">
-            <PieChart className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Profit Margin</span>
+            <div className="flex items-center justify-between text-xs text-charcoal-600 pb-2 border-b border-charcoal-200/80">
+              <span>Net Profit Per Unit:</span>
+              <span className="font-mono font-bold text-emerald-800">
+                +₹{calculations.profitPerUnit} / unit
+              </span>
+            </div>
           </div>
-          <p className={`text-xl font-black ${profitMargin >= 0 ? 'text-emerald-300' : 'text-red-400'}`}>
-            {profitMargin.toFixed(1)}%
-          </p>
-          <p className="text-[10px] text-emerald-300/70">(Profit / Revenue × 100)</p>
+
+          {/* Large Result Box */}
+          <div className="p-4 rounded-xl bg-emerald-800 text-white flex items-center justify-between shadow-soft">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-200 block">
+                Total Net Profit ({quantity} units)
+              </span>
+              <div className="text-2xl sm:text-3xl font-black mt-0.5">
+                ₹{calculations.profit.toLocaleString()}
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-200 block">
+                Profit Margin
+              </span>
+              <div className="text-2xl sm:text-3xl font-black text-emerald-300 flex items-center justify-end gap-0.5">
+                <span>{calculations.profitMargin}%</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-};
+}

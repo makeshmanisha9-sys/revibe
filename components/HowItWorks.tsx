@@ -1,71 +1,58 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { UploadCloud, Cpu, Compass, Lightbulb, Hammer, Share2 } from 'lucide-react';
+import { UploadCloud, Sparkles, Dna, Palette, Hammer, ShoppingBag, Trophy, Flame } from 'lucide-react';
 
-const steps = [
-  { step: '01', title: 'Upload Waste', icon: UploadCloud, desc: 'Drag and drop waste photos (plastic, glass, cardboard, denim).' },
-  { step: '02', title: 'AI Identifies Material', icon: Cpu, desc: 'Gemini AI extracts material, category, & confidence score.' },
-  { step: '03', title: 'Creative / Business Mode', icon: Compass, desc: 'Select DIY artistic mode or commercial financial mode.' },
-  { step: '04', title: 'Generate Product Ideas', icon: Lightbulb, desc: 'Receive step-by-step assembly guides & cost calculations.' },
-  { step: '05', title: 'Create Product', icon: Hammer, desc: 'Assemble the upcycled creation using suggested tools.' },
-  { step: '06', title: 'Sell / Donate / Share', icon: Share2, desc: 'List on Marketplace, donate materials, or post to feed.' },
+const STEPS = [
+  { step: '01', title: 'Upload Waste', desc: 'Capture or drag a photo of discarded materials.', icon: UploadCloud },
+  { step: '02', title: 'AI Identification', desc: 'Multimodal vision classifies material category & purity.', icon: Sparkles },
+  { step: '03', title: 'Explore Waste DNA', desc: 'Inspect transformation potential and rescue score.', icon: Dna },
+  { step: '04', title: 'Choose Mode', desc: 'Switch between Creative DIY and Business Mode.', icon: Palette },
+  { step: '05', title: 'Generate Ideas', desc: 'Receive step-by-step blueprints & YouTube tutorials.', icon: Hammer },
+  { step: '06', title: 'Learn & Create', desc: 'Craft high-value products with safety guidance.', icon: Trophy },
+  { step: '07', title: 'Sell or Donate', desc: 'List in Marketplace, donate scrap, or share to Community.', icon: ShoppingBag },
+  { step: '08', title: 'Earn Eco Score', desc: 'Earn verified points, unlock badges, and track impact.', icon: Flame },
 ];
 
-export const HowItWorks: React.FC = () => {
+export function HowItWorks() {
   return (
-    <section className="py-20 bg-emerald-950 text-white relative overflow-hidden border-b border-emerald-800/40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-        
-        {/* Section Heading */}
-        <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">
-            Simple 6-Step Workflow
+    <section className="py-12 lg:py-16 bg-charcoal-50/70 border-y border-charcoal-200/60">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 block">
+            The Circular Process
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-white">
+          <h2 className="text-2xl sm:text-3xl font-black text-charcoal-900">
             How ReVIBE Works
           </h2>
-          <p className="text-sm text-emerald-200/80">
-            From raw discarded waste to profitable eco-products and community recognition.
+          <p className="text-xs sm:text-sm text-charcoal-500">
+            An intuitive 8-step journey from landfill avoidance to tangible economic value.
           </p>
         </div>
 
-        {/* Timeline Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {steps.map((item, idx) => {
-            const Icon = item.icon;
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {STEPS.map((s, idx) => {
+            const Icon = s.icon;
             return (
-              <motion.div
-                key={item.step}
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="relative rounded-2xl bg-emerald-900/40 border border-emerald-800/60 p-6 space-y-4 hover:border-emerald-500/50 transition-all group"
+              <div
+                key={idx}
+                className="p-5 rounded-3xl bg-white border border-charcoal-200 shadow-soft flex flex-col justify-between space-y-3"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-3xl font-black text-emerald-500/40 group-hover:text-emerald-400 transition-colors">
-                    {item.step}
+                  <span className="text-xs font-mono font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl">
+                    {s.step}
                   </span>
-                  <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
-                    <Icon className="w-5 h-5" />
-                  </div>
+                  <Icon className="w-5 h-5 text-charcoal-400" />
                 </div>
-
-                <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
-                  {item.title}
-                </h3>
-
-                <p className="text-xs text-emerald-200/70 leading-relaxed">
-                  {item.desc}
-                </p>
-              </motion.div>
+                <div>
+                  <h4 className="text-sm font-black text-charcoal-900">{s.title}</h4>
+                  <p className="text-xs text-charcoal-500 mt-1 leading-relaxed">{s.desc}</p>
+                </div>
+              </div>
             );
           })}
         </div>
-
       </div>
     </section>
   );
-};
+}

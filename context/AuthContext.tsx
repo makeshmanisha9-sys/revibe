@@ -5,6 +5,7 @@ import { Profile } from '@/types/database';
 
 interface AuthContextType {
   user: Profile | null;
+  profile: Profile | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
@@ -109,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
+        profile: user,
         isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
         loading,

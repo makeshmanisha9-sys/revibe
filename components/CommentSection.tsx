@@ -5,72 +5,95 @@ import { Comment } from '@/types/database';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { dataStore } from '@/lib/supabase/client';
-import { Send } from 'lucide-react';
+import { Send, MessageCircle } from 'lucide-react';
 
 interface CommentSectionProps {
   postId: string;
-  comments: Comment[];
-  onCommentAdded: () => void;
+  initialComments: Comment[];
 }
 
-export const CommentSection: React.FC<CommentSectionProps> = ({ postId, comments, onCommentAdded }) => {
-  const { user } = useAuth();
+export function CommentSection({ postId, initialComments }: CommentSectionProps) {
+  const { user, profile, isAuthenticated } = useAuth();
   const { showToast } = useToast();
+  const [comments, setComments] = useState<Comment[]>(initialComments);
   const [commentText, setCommentText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
-    if (!user) {
-      showToast('Please log in to leave a comment', 'info');
+    if (!isAuthenticated || !user) {
+      showToast('Please log in to join the conversation', 'error');
       return;
     }
+    if (!commentText.trim() || isSubmitting) return;
 
-    setSubmitting(true);
-    await dataStore.addComment(postId, user.id, commentText.trim(), user.name);
-    setCommentText('');
-    setSubmitting(false);
-    showToast('Comment posted successfully!', 'success');
-    onCommentAdded();
+    setIsSubmitting(true);
+    try {
+      const newComment = await dataStore.addComment(
+        postId,
+        user.id,
+        commentText.trim(),
+        profile?.name || 'ReVIBE Creator',
+        profile?.avatar_url
+      );
+      setComments((prev) => [...prev, newComment]);
+      setCommentText('');
+      showToast('Comment posted! 💬', 'success');
+    } catch (e) {
+      showToast('Failed to post comment', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 pt-2">
       {/* Existing Comments List */}
-      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+      <div className="max-h-48 overflow-y-auto space-y-2.5 pr-1">
         {comments.length === 0 ? (
-          <p className="text-[11px] text-emerald-400/60 italic">No comments yet. Be the first to start the discussion!</p>
+          <p className="text-[11px] text-charcoal-400 italic py-2 text-center">
+            No comments yet. Be the first to share your thoughts!
+          </p>
         ) : (
-          comments.map((comm) => (
-            <div key={comm.id} className="p-2.5 rounded-xl bg-emerald-900/40 border border-emerald-800/50 text-xs space-y-0.5">
-              <div className="flex items-center justify-between text-[10px] text-emerald-400 font-bold">
-                <span>{comm.user?.name || 'Community Member'}</span>
-                <span className="text-emerald-500/70">{new Date(comm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          comments.map((c) => (
+            <div key={c.id} className="flex items-start gap-2 text-xs">
+              <img
+                src={
+                  c.user?.avatar_url ||
+                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+                }
+                alt="Commenter"
+                className="w-6 h-6 rounded-full object-cover mt-0.5"
+              />
+              <div className="flex-1 bg-charcoal-50 p-2.5 rounded-2xl">
+                <span className="font-bold text-charcoal-900 block text-[11px]">
+                  {c.user?.name || 'Community Member'}
+                </span>
+                <p className="text-charcoal-700 mt-0.5 leading-relaxed">{c.comment}</p>
               </div>
-              <p className="text-emerald-100 text-xs">{comm.comment}</p>
             </div>
           ))
         )}
       </div>
 
-      {/* Input Form */}
-      <form onSubmit={handleSubmit} className="flex items-center gap-2 pt-2 border-t border-emerald-900/40">
+      {/* Post Comment Input */}
+      <form onSubmit={handleSubmitComment} className="flex items-center gap-2 pt-1">
         <input
           type="text"
-          placeholder="Write an encouraging comment..."
+          placeholder="Add a comment or question..."
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
-          className="flex-1 bg-emerald-900/60 border border-emerald-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-emerald-400/60 focus:outline-none focus:border-emerald-400"
+          className="flex-1 px-3 py-2 rounded-xl bg-charcoal-50 border border-charcoal-200 text-xs text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors"
         />
         <button
           type="submit"
-          disabled={submitting || !commentText.trim()}
-          className="p-2 rounded-xl bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-bold text-xs disabled:opacity-50 transition-all"
+          disabled={!commentText.trim() || isSubmitting}
+          className="p-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white transition-colors btn-press"
+          aria-label="Submit comment"
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-3.5 h-3.5" />
         </button>
       </form>
     </div>
   );
-};
+}

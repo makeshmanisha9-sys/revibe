@@ -1,27 +1,29 @@
-import { Idea } from '@/types/database';
+import { Idea, TutorialVideo } from '@/types/database';
 
-export async function generateCreativeIdeas(detectedMaterial: string, wasteCategory: string, customApiKey?: string): Promise<Idea[]> {
-  const storedKey = typeof window !== 'undefined' ? localStorage.getItem('revibe_user_gemini_key') || '' : '';
-  const apiKey = customApiKey || storedKey;
-
+export async function generateCreativeIdeas(
+  material: string,
+  category: string,
+  apiKey?: string
+): Promise<Idea[]> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
+
   if (apiKey) {
     headers['x-ai-api-key'] = apiKey;
   }
 
-  const res = await fetch('/api/ai/ideas', {
+  const response = await fetch('/api/ai/ideas', {
     method: 'POST',
     headers,
-    body: JSON.stringify({ detectedMaterial, wasteCategory }),
+    body: JSON.stringify({ material, category }),
   });
 
-  const data = await res.json();
-
-  if (!res.ok || data.error) {
-    throw new Error(data.error || 'AI analysis is temporarily unavailable. Please try again.');
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to generate upcycling ideas');
   }
 
-  return data as Idea[];
+  const data = await response.json();
+  return data.ideas;
 }

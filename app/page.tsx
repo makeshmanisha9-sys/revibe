@@ -1,52 +1,55 @@
+import React from 'react';
 import { Hero } from '@/components/Hero';
 import { FeatureCards } from '@/components/FeatureCards';
 import { HowItWorks } from '@/components/HowItWorks';
 import Link from 'next/link';
-import { Sparkles, ArrowRight, Leaf } from 'lucide-react';
+import { Sparkles, ShoppingBag, ArrowRight, ShieldCheck, Recycle, Trophy, Gift, Users } from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <div className="space-y-0">
-      {/* Hero Section */}
+    <div className="space-y-6">
+      {/* 1. Hero Section with Interactive Waste Flow */}
       <Hero />
 
-      {/* Feature Cards Grid */}
+      {/* 2. Primary Ecosystem Feature Cards */}
       <FeatureCards />
 
-      {/* Process Timeline */}
+      {/* 3. 8-Step Animated Process: How It Works */}
       <HowItWorks />
 
-      {/* Bottom CTA Banner */}
-      <section className="py-20 bg-gradient-to-r from-emerald-900 via-emerald-950 to-emerald-900 text-white relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold uppercase">
-            <Leaf className="w-4 h-4 text-emerald-400" />
-            <span>Join 10,000+ Zero-Waste Innovators</span>
-          </div>
+      {/* 4. Hackathon Highlights: Mission & Global Circular Impact */}
+      <section className="py-12 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-emerald-900 via-charcoal-900 to-charcoal-950 text-white shadow-soft-lg flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="space-y-4 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                <Recycle className="w-4 h-4 text-emerald-400" />
+                <span>Zero Landfill Mission</span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+                Ready to transform your discarded materials into high-value assets?
+              </h2>
+              <p className="text-xs sm:text-sm text-charcoal-300 leading-relaxed font-normal">
+                Join thousands of creators, households, students, and green entrepreneurs turning municipal and household waste into verified income and environmental impact.
+              </p>
+            </div>
 
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight">
-            Ready to Turn Your Waste Into Worth?
-          </h2>
-
-          <p className="text-sm sm:text-base text-emerald-200/80 max-w-2xl mx-auto">
-            Upload your first waste image today, get Gemini AI material detection, step-by-step DIY upcycling guides, and launch your green micro-business.
-          </p>
-
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/upload"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-extrabold text-sm transition-all shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Start Free AI Waste Scan</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/marketplace"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-emerald-950/80 border border-emerald-700 hover:bg-emerald-900 text-emerald-200 font-bold text-sm transition-all flex items-center justify-center gap-2"
-            >
-              <span>Explore Marketplace</span>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-shrink-0">
+              <Link
+                href="/upload"
+                className="py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-xs sm:text-sm font-black text-center transition-all btn-press shadow-soft flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Start AI Analysis</span>
+              </Link>
+              <Link
+                href="/challenges"
+                className="py-3.5 px-6 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-bold text-center transition-all btn-press flex items-center justify-center gap-2"
+              >
+                <Trophy className="w-4 h-4 text-amber-400" />
+                <span>Try 60-Min Challenge</span>
+              </Link>
+            </div>
           </div>
         </div>
       </section>

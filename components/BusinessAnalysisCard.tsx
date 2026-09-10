@@ -2,95 +2,100 @@
 
 import React from 'react';
 import { BusinessAnalysisResult } from '@/types/database';
-import { DollarSign, TrendingUp, PieChart, Users, AlertCircle, ShoppingBag, ArrowRight } from 'lucide-react';
+import { TrendingUp, DollarSign, Users, Briefcase, Percent, ShieldCheck, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 
 interface BusinessAnalysisCardProps {
   business: BusinessAnalysisResult;
 }
 
-export const BusinessAnalysisCard: React.FC<BusinessAnalysisCardProps> = ({ business }) => {
+export function BusinessAnalysisCard({ business }: BusinessAnalysisCardProps) {
+  const totalCost = business.production_cost + business.additional_cost;
+
   return (
-    <div className="rounded-2xl bg-gradient-to-b from-emerald-950 to-slate-950 border border-emerald-700/60 p-6 space-y-6 shadow-2xl">
-      <div className="flex items-center justify-between border-b border-emerald-800/80 pb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
-            <TrendingUp className="w-5 h-5" />
+    <div className="p-6 sm:p-8 rounded-3xl bg-white border border-charcoal-200 shadow-soft space-y-6">
+      <div className="flex items-center justify-between border-b border-charcoal-100 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-emerald-100/80 text-emerald-800">
+            <Briefcase className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Commercial Feasibility Metrics</h3>
-            <p className="text-xs text-emerald-300/70">AI Micro-Business Valuation</p>
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-charcoal-900">
+              Commercial Viability & Profit Breakdown
+            </h3>
+            <p className="text-xs text-charcoal-500">Economic Unit Analysis & Margin Projections</p>
           </div>
         </div>
 
-        <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold uppercase">
-          Demand: {business.market_demand}
+        <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1">
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>{business.market_demand} Market Demand</span>
         </span>
       </div>
 
-      {/* Financial Matrix Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-        <div className="p-4 rounded-xl bg-emerald-900/30 border border-emerald-800/60 space-y-1">
-          <span className="text-emerald-400 font-semibold">Total Prod. Cost</span>
-          <p className="text-xl font-black text-white">₹{business.production_cost + business.additional_cost}</p>
-          <p className="text-[10px] text-emerald-300/60">(Mat: ₹{business.production_cost} + Add: ₹{business.additional_cost})</p>
+      {/* 4-Box Key Financial Metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="p-4 rounded-2xl bg-charcoal-50 border border-charcoal-100">
+          <span className="text-[10px] uppercase font-bold text-charcoal-400 tracking-wider block">Production Cost</span>
+          <div className="text-lg font-black text-charcoal-900 mt-1">₹{business.production_cost}</div>
+          <span className="text-[10px] text-charcoal-500 mt-0.5 block">+ ₹{business.additional_cost} aux. tooling</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-emerald-900/30 border border-emerald-800/60 space-y-1">
-          <span className="text-blue-400 font-semibold">Suggested Selling Price</span>
-          <p className="text-xl font-black text-blue-300">₹{business.suggested_selling_price}</p>
-          <p className="text-[10px] text-emerald-300/60">Based on market demand</p>
+        <div className="p-4 rounded-2xl bg-charcoal-50 border border-charcoal-100">
+          <span className="text-[10px] uppercase font-bold text-charcoal-400 tracking-wider block">Suggested Price</span>
+          <div className="text-lg font-black text-charcoal-900 mt-1">₹{business.suggested_selling_price}</div>
+          <span className="text-[10px] text-charcoal-500 mt-0.5 block">Market competitive</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-emerald-900/30 border border-emerald-800/60 space-y-1">
-          <span className="text-emerald-400 font-semibold">Estimated Net Profit</span>
-          <p className="text-xl font-black text-emerald-400">₹{business.estimated_profit}</p>
-          <p className="text-[10px] text-emerald-300/60">Per unit profit</p>
+        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-100">
+          <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider block">Est. Profit / Unit</span>
+          <div className="text-lg font-black text-emerald-900 mt-1">₹{business.estimated_profit}</div>
+          <span className="text-[10px] text-emerald-700 font-semibold mt-0.5 block">Net pre-tax margin</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-emerald-900/30 border border-emerald-800/60 space-y-1">
-          <span className="text-emerald-300 font-semibold">Profit Margin</span>
-          <p className="text-xl font-black text-emerald-300">{business.profit_margin.toFixed(1)}%</p>
-          <p className="text-[10px] text-emerald-300/60">High yield margin</p>
+        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-100">
+          <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider block">Profit Margin</span>
+          <div className="text-lg font-black text-emerald-900 mt-1 flex items-center gap-1">
+            <Percent className="w-4 h-4 text-emerald-600" />
+            <span>{business.profit_margin}%</span>
+          </div>
+          <span className="text-[10px] text-emerald-700 font-semibold mt-0.5 block">High ROI potential</span>
         </div>
       </div>
 
       {/* Target Buyer Personas */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-200">
-          <Users className="w-4 h-4 text-emerald-400" />
-          <span>Potential Target Buyers & Market Segment</span>
+      <div className="p-5 rounded-2xl bg-charcoal-50/60 border border-charcoal-100 space-y-3">
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-charcoal-700" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal-900">
+            Target Customer Demographics
+          </h4>
         </div>
-        <div className="flex flex-wrap gap-2">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {business.potential_buyers.map((buyer, idx) => (
-            <span key={idx} className="px-3 py-1 rounded-lg bg-emerald-900/50 border border-emerald-700/50 text-xs text-emerald-200 font-medium">
-              🎯 {buyer}
-            </span>
+            <div key={idx} className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-charcoal-200 text-xs text-charcoal-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0" />
+              <span className="font-semibold">{buyer}</span>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Recommended Scalable Products */}
-      {business.product_ideas && business.product_ideas.length > 0 && (
-        <div className="space-y-3 pt-2">
-          <h4 className="text-xs font-bold text-white uppercase tracking-wider">Scalable Product Opportunity:</h4>
-          {business.product_ideas.map((prod, idx) => (
-            <div key={idx} className="p-4 rounded-xl bg-emerald-900/40 border border-emerald-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <p className="font-bold text-sm text-white">{prod.product_name}</p>
-                <p className="text-xs text-emerald-200/70 mt-0.5">{prod.description}</p>
-              </div>
-              <Link
-                href={`/sell?name=${encodeURIComponent(prod.product_name)}&price=${prod.selling_price}&cost=${prod.cost}`}
-                className="px-4 py-2 rounded-lg bg-emerald-500 text-emerald-950 font-bold text-xs flex items-center gap-1 hover:bg-emerald-400 transition-colors shadow-md"
-              >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Launch This Product</span>
-              </Link>
-            </div>
-          ))}
+      {/* Bottom Listing Action */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-900 to-charcoal-900 text-white">
+        <div className="space-y-0.5 text-center sm:text-left">
+          <h4 className="text-xs font-bold text-emerald-300">Ready to commercialize this product?</h4>
+          <p className="text-[11px] text-charcoal-300">List directly in ReVIBE Marketplace and accept customer requests.</p>
         </div>
-      )}
+        <Link
+          href={`/sell?price=${business.suggested_selling_price}&cost=${totalCost}`}
+          className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-xs font-bold flex items-center gap-1.5 btn-press flex-shrink-0"
+        >
+          <span>List Product Now</span>
+          <ArrowUpRight className="w-4 h-4" />
+        </Link>
+      </div>
     </div>
   );
-};
+}

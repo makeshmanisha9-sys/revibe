@@ -5,38 +5,44 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { dataStore } from '@/lib/supabase/client';
-import { HeartHandshake, Lock } from 'lucide-react';
+import { Donation } from '@/types/database';
+import { Gift, PlusCircle, Lock, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CreateDonationPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, profile, isAuthenticated } = useAuth();
   const { showToast } = useToast();
 
   const [materialName, setMaterialName] = useState('');
-  const [materialType, setMaterialType] = useState('Plastic Bottles');
-  const [quantity, setQuantity] = useState('20 kg');
-  const [condition, setCondition] = useState('Clean / Sorted');
+  const [materialType, setMaterialType] = useState<Donation['material_type']>('Cardboard');
+  const [quantity, setQuantity] = useState('');
+  const [condition, setCondition] = useState<Donation['condition']>('Clean Scrap');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=800&q=80');
-  const [location, setLocation] = useState(user?.location || 'Green City, CA');
-  const [contactInfo, setContactInfo] = useState(user?.email || 'eco@revibe.org');
+  const [location, setLocation] = useState(profile?.location || 'Bengaluru, India');
+  const [contactInfo, setContactInfo] = useState(profile?.email || 'donations@revibe.eco | Available for pickup');
   const [submitting, setSubmitting] = useState(false);
 
   if (!isAuthenticated) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
-        <div className="max-w-md w-full p-8 rounded-2xl bg-emerald-950/80 border border-emerald-800 text-center space-y-4">
-          <div className="p-4 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 w-14 h-14 mx-auto flex items-center justify-center">
-            <Lock className="w-6 h-6" />
+        <div className="max-w-md w-full p-8 rounded-3xl bg-white border border-charcoal-200 text-center space-y-4 shadow-soft">
+          <div className="p-4 rounded-2xl bg-emerald-50 text-emerald-800 w-14 h-14 mx-auto flex items-center justify-center">
+            <Lock className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-white">Authentication Required</h2>
-          <p className="text-xs text-emerald-200/70">
-            Please log in to donate waste materials or products.
+          <h2 className="text-xl font-black text-charcoal-900">Authentication Required</h2>
+          <p className="text-xs text-charcoal-500">
+            Please log in or register to list raw waste materials for community donation.
           </p>
-          <Link href="/login" className="inline-block px-5 py-2.5 rounded-xl bg-emerald-500 text-emerald-950 font-bold text-xs">
-            Log In
-          </Link>
+          <div className="pt-2 flex gap-3">
+            <Link href="/login" className="flex-1 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs btn-press">
+              Log In
+            </Link>
+            <Link href="/register" className="flex-1 py-3 rounded-xl border border-charcoal-300 text-charcoal-800 font-bold text-xs btn-press">
+              Sign Up
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -44,8 +50,8 @@ export default function CreateDonationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!materialName || !description || !location || !contactInfo) {
-      showToast('Please fill in all required fields.', 'error');
+    if (!materialName || !quantity || !description || !location || !contactInfo) {
+      showToast('Please fill in all required fields', 'error');
       return;
     }
 
@@ -54,8 +60,10 @@ export default function CreateDonationPage() {
       await dataStore.createDonation({
         donor_id: user?.id || 'demo-user-1',
         donor: {
-          name: user?.name,
-          location: user?.location,
+          id: user?.id,
+          name: profile?.name || 'Aanya Sharma',
+          location,
+          avatar_url: profile?.avatar_url,
         },
         material_name: materialName,
         material_type: materialType,
@@ -65,124 +73,137 @@ export default function CreateDonationPage() {
         image_url: imageUrl,
         location,
         contact_information: contactInfo,
-        status: 'available',
       });
 
-      showToast('Donation created successfully!', 'success');
+      showToast('Donation listed successfully! +40 Eco Points 🎁', 'success');
       router.push('/donation');
-    } catch (err) {
-      showToast('Failed to create donation. Try again.', 'error');
+    } catch (e) {
+      showToast('Failed to create donation listing', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-black text-white">Donate Reusable Materials</h1>
-        <p className="text-xs text-emerald-200/70">Share surplus scrap, cardboard, glass, or plastic with upcyclers and artisans.</p>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+          <Gift className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Zero-Waste Redistribution</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-black text-charcoal-900">List Material Donation</h1>
+        <p className="text-xs sm:text-sm text-charcoal-500">
+          Offer your clean surplus waste or finished upcycled items to crafters, schools, and NGOs for creative reuse.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-8 rounded-2xl bg-emerald-950/80 border border-emerald-800 space-y-6 shadow-2xl">
-        <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="p-6 sm:p-10 rounded-3xl bg-white border border-charcoal-200 space-y-6 shadow-soft">
+        <div className="space-y-4 text-xs">
           <div>
-            <label className="block text-xs font-bold text-emerald-200 mb-1">Material Name *</label>
+            <label className="block font-bold text-charcoal-700 mb-1">Material / Batch Title *</label>
             <input
               type="text"
               required
-              placeholder="e.g. Clean Double-Wall Cardboard Boxes Batch"
+              placeholder="e.g. Clean Double-Wall Corrugated Cardboard Boxes"
               value={materialName}
               onChange={(e) => setMaterialName(e.target.value)}
-              className="w-full bg-emerald-900/50 border border-emerald-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder-emerald-400/50 focus:outline-none focus:border-emerald-400"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-emerald-200 mb-1">Material Type *</label>
-              <select
-                value={materialType}
-                onChange={(e) => setMaterialType(e.target.value)}
-                className="w-full bg-emerald-900/50 border border-emerald-700/80 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"
-              >
-                <option value="Plastic Bottles" className="bg-emerald-950">Plastic Bottles</option>
-                <option value="Cardboard" className="bg-emerald-950">Cardboard & Paper</option>
-                <option value="Glass bottles" className="bg-emerald-950">Glass Bottles</option>
-                <option value="Fabric" className="bg-emerald-950">Fabric & Denim</option>
-                <option value="Coconut Shells" className="bg-emerald-950">Coconut Shells</option>
-                <option value="Scrap Metal" className="bg-emerald-950">Scrap Metal</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-emerald-200 mb-1">Quantity *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. 25 kg / 40 pcs"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="w-full bg-emerald-900/50 border border-emerald-700/80 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-emerald-200 mb-1">Condition *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Washed / Sterilized"
-                value={condition}
-                onChange={(e) => setCondition(e.target.value)}
-                className="w-full bg-emerald-900/50 border border-emerald-700/80 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-emerald-200 mb-1">Image URL *</label>
-            <input
-              type="url"
-              required
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full bg-emerald-900/50 border border-emerald-700/80 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-emerald-200 mb-1">Description *</label>
-            <textarea
-              required
-              rows={3}
-              placeholder="Provide details on pickup instructions, batch condition, etc..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-emerald-900/50 border border-emerald-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder-emerald-400/50 focus:outline-none focus:border-emerald-400"
+              className="w-full bg-charcoal-50 border border-charcoal-200 rounded-xl px-4 py-2.5 text-charcoal-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-emerald-200 mb-1">Location *</label>
+              <label className="block font-bold text-charcoal-700 mb-1">Material Type *</label>
+              <select
+                value={materialType}
+                onChange={(e: any) => setMaterialType(e.target.value)}
+                className="w-full bg-charcoal-50 border border-charcoal-200 rounded-xl px-4 py-2.5 text-charcoal-900 font-semibold focus:outline-none focus:border-emerald-600"
+              >
+                <option value="Plastic">Plastic</option>
+                <option value="Newspaper">Newspaper</option>
+                <option value="Cardboard">Cardboard</option>
+                <option value="Fabric">Fabric</option>
+                <option value="Glass">Glass</option>
+                <option value="Coconut shells">Coconut shells</option>
+                <option value="Agricultural waste">Agricultural waste</option>
+                <option value="Finished upcycled products">Finished upcycled products</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-charcoal-700 mb-1">Condition *</label>
+              <select
+                value={condition}
+                onChange={(e: any) => setCondition(e.target.value)}
+                className="w-full bg-charcoal-50 border border-charcoal-200 rounded-xl px-4 py-2.5 text-charcoal-900 font-semibold focus:outline-none focus:border-emerald-600"
+              >
+                <option value="Clean Scrap">Clean Scrap</option>
+                <option value="Washed / Sterilized">Washed / Sterilized</option>
+                <option value="Gently Used">Gently Used</option>
+                <option value="Brand New">Brand New</option>
+                <option value="Raw Waste">Raw Waste</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-charcoal-700 mb-1">Quantity Batch *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. 25 kg batch (15 boxes) or 40 bottles"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="w-full bg-charcoal-50 border border-charcoal-200 rounded-xl px-4 py-2.5 text-charcoal-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-charcoal-700 mb-1">Image URL *</label>
+              <input
+                type="url"
+                required
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="w-full bg-charcoal-50 border border-charcoal-200 rounded-xl px-4 py-2.5 text-charcoal-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-charcoal-700 mb-1">Description & Pickup Guidelines *</label>
+            <textarea
+              required
+              rows={3}
+              placeholder="Describe the material condition, suitability for DIY, and pickup hours..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full bg-charcoal-50 border border-charcoal-200 rounded-xl px-4 py-2.5 text-charcoal-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-charcoal-700 mb-1">Location *</label>
               <input
                 type="text"
                 required
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full bg-emerald-900/50 border border-emerald-700/80 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"
+                className="w-full bg-charcoal-50 border border-charcoal-200 rounded-xl px-4 py-2.5 text-charcoal-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-emerald-200 mb-1">Contact Information *</label>
+              <label className="block font-bold text-charcoal-700 mb-1">Contact Details *</label>
               <input
                 type="text"
                 required
                 value={contactInfo}
                 onChange={(e) => setContactInfo(e.target.value)}
-                className="w-full bg-emerald-900/50 border border-emerald-700/80 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400"
+                className="w-full bg-charcoal-50 border border-charcoal-200 rounded-xl px-4 py-2.5 text-charcoal-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
               />
             </div>
           </div>
@@ -191,10 +212,10 @@ export default function CreateDonationPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
+          className="w-full py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-soft transition-all btn-press"
         >
-          <HeartHandshake className="w-4 h-4" />
-          <span>{submitting ? 'Publishing Donation...' : 'Publish Donation to Hub'}</span>
+          <Gift className="w-4 h-4" />
+          <span>{submitting ? 'Publishing Listing...' : 'Publish Donation Listing (+40 Eco Points)'}</span>
         </button>
       </form>
     </div>

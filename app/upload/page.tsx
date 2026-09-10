@@ -8,11 +8,14 @@ import { AIAnalysisCard } from '@/components/AIAnalysisCard';
 import { IdeaCard } from '@/components/IdeaCard';
 import { BusinessAnalysisCard } from '@/components/BusinessAnalysisCard';
 import { ProfitCalculator } from '@/components/ProfitCalculator';
+import { TutorialSection } from '@/components/TutorialSection';
 import { analyzeWasteImage, AIWasteAnalysisResponse } from '@/services/ai/wasteAnalysis';
 import { generateCreativeIdeas } from '@/services/ai/ideaGenerator';
 import { generateBusinessAnalysis } from '@/services/ai/businessAnalysis';
-import { Idea, BusinessAnalysisResult } from '@/types/database';
-import { Sparkles, AlertCircle, RefreshCw, Lock, Key, ExternalLink, Check, Play } from 'lucide-react';
+import { fetchTutorialRecommendations } from '@/services/youtube';
+import { dataStore } from '@/lib/supabase/client';
+import { Idea, BusinessAnalysisResult, TutorialVideo } from '@/types/database';
+import { Sparkles, AlertCircle, RefreshCw, Lock, Key, ExternalLink, Check, Play, ShieldAlert, ArrowRight, Youtube } from 'lucide-react';
 import Link from 'next/link';
 
 export default function UploadPage() {
@@ -25,9 +28,10 @@ export default function UploadPage() {
   const [activeMode, setActiveMode] = useState<'creative' | 'business'>('creative');
   const [creativeIdeas, setCreativeIdeas] = useState<Idea[]>([]);
   const [businessData, setBusinessData] = useState<BusinessAnalysisResult | null>(null);
+  const [recommendedTutorials, setRecommendedTutorials] = useState<TutorialVideo[]>([]);
   const [errorState, setErrorState] = useState<string | null>(null);
 
-  // Gemini API Key management
+  // Optional Gemini API Key configuration
   const [userApiKey, setUserApiKey] = useState('');
   const [showKeyInput, setShowKeyInput] = useState(false);
 
@@ -39,26 +43,26 @@ export default function UploadPage() {
   const saveApiKey = (key: string) => {
     setUserApiKey(key);
     localStorage.setItem('revibe_user_gemini_key', key);
-    showToast('Gemini API Key saved!', 'success');
+    showToast('Gemini API Key configured! ✓', 'success');
   };
 
   if (!isAuthenticated) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
-        <div className="max-w-md w-full p-8 rounded-2xl bg-emerald-950/80 border border-emerald-800 text-center space-y-4">
-          <div className="p-4 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 w-14 h-14 mx-auto flex items-center justify-center">
-            <Lock className="w-6 h-6" />
+        <div className="max-w-md w-full p-8 rounded-3xl bg-white border border-charcoal-200 text-center space-y-4 shadow-soft">
+          <div className="p-4 rounded-2xl bg-emerald-50 text-emerald-800 w-14 h-14 mx-auto flex items-center justify-center">
+            <Lock className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-white">Authentication Required</h2>
-          <p className="text-xs text-emerald-200/70">
-            Please log in or create an account to access AI waste image analysis and upcycling generators.
+          <h2 className="text-xl font-black text-charcoal-900">Authentication Required</h2>
+          <p className="text-xs text-charcoal-500 leading-relaxed">
+            Please log in or create an account to access AI waste identification, Waste DNA extraction, and personalized upcycling generators.
           </p>
-          <div className="pt-2 flex gap-3">
-            <Link href="/login" className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-emerald-950 font-bold text-xs">
+          <div className="pt-3 flex gap-3">
+            <Link href="/login" className="flex-1 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs btn-press">
               Log In
             </Link>
-            <Link href="/register" className="flex-1 py-2.5 rounded-xl border border-emerald-700 text-emerald-200 font-bold text-xs">
-              Register
+            <Link href="/register" className="flex-1 py-3 rounded-xl border border-charcoal-300 text-charcoal-800 font-bold text-xs btn-press">
+              Sign Up
             </Link>
           </div>
         </div>
@@ -74,104 +78,49 @@ export default function UploadPage() {
 
     setIsAnalyzing(true);
     setErrorState(null);
-    showToast('Analyzing your waste image with Gemini AI...', 'info');
+    showToast('Analyzing your waste image with Vision AI...', 'info');
 
     try {
-      // 1. Vision AI Analysis via Server API Route
+      // 1. Vision AI Analysis
       const analysis = await analyzeWasteImage(selectedImage, userApiKey);
       setAnalysisResult(analysis);
 
-      // 2. Generate initial mode content
-      if (activeMode === 'creative') {
-        const ideas = await generateCreativeIdeas(analysis.detectedMaterial, analysis.wasteCategory, userApiKey);
-        setCreativeIdeas(ideas);
-      } else {
+      // Save to user history in persistent database
+      if (user) {
+        await dataStore.saveAnalysis({
+          user_id: user.id,
+          image_url: selectedImage,
+          detected_material: analysis.detectedMaterial,
+          waste_category: analysis.wasteCategory,
+          confidence: analysis.confidence,
+          possible_reusable_materials: analysis.possibleReusableMaterials,
+          waste_dna: analysis.wasteDNA,
+          rescue_score: analysis.rescueScore,
+        });
+      }
+
+      // 2. Generate initial mode content & YouTube DIY video recommendations
+      const [ideas, tutorials] = await Promise.all([
+        generateCreativeIdeas(analysis.detectedMaterial, analysis.wasteCategory, userApiKey),
+        fetchTutorialRecommendations(analysis.detectedMaterial, analysis.possibleReusableMaterials?.[0] || 'DIY Upcycling', 'creative'),
+      ]);
+      setCreativeIdeas(ideas);
+      setRecommendedTutorials(tutorials);
+
+      if (activeMode === 'business') {
         const biz = await generateBusinessAnalysis(analysis.detectedMaterial, analysis.wasteCategory, userApiKey);
         setBusinessData(biz);
       }
 
-      showToast('AI Analysis Complete!', 'success');
+      showToast('AI Waste Analysis Complete! +20 Eco Points', 'success');
     } catch (err: any) {
       console.error('Analysis failed:', err);
       const msg = 'AI analysis is temporarily unavailable. Please try again.';
       setErrorState(msg);
       showToast(msg, 'error');
-      setShowKeyInput(true);
     } finally {
       setIsAnalyzing(false);
     }
-  };
-
-  const handleRunDemoAnalysis = () => {
-    setIsAnalyzing(true);
-    setErrorState(null);
-    showToast('Running explicit Demo AI Analysis...', 'info');
-
-    setTimeout(() => {
-      const demoAnalysis: AIWasteAnalysisResponse = {
-        detectedMaterial: 'Plastic Bottle',
-        wasteCategory: 'Plastic Waste',
-        confidence: 95,
-        possibleReusableMaterials: ['PET Plastic Body', 'Plastic Cap', 'Polypropylene Ring'],
-      };
-
-      const demoIdeas: Idea[] = [
-        {
-          id: 'demo-idea-1',
-          product_name: 'Plastic Bottle Ambient Table Lamp',
-          description: 'Transform recycled PET bottles into a stylish geometric ambient table lamp with warm LED illumination.',
-          difficulty: 'Medium',
-          materials: ['1x Clean Plastic Bottle', 'Warm LED String Light', 'Decorative Jute Rope', 'Eco-friendly Glue'],
-          tools: ['Scissors', 'Craft Knife', 'Sandpaper'],
-          instructions: [
-            'Clean and thoroughly dry the plastic bottle.',
-            'Carefully slice off the top neck section using a craft knife.',
-            'Smooth down the cut edge using sandpaper.',
-            'Wrap jute rope around the base for an organic texture.',
-            'Insert the LED string light assembly inside and test illumination.'
-          ],
-          estimated_time: '1.5 - 2 hours',
-          cost: 80,
-          selling_price: 300,
-          profit: 220,
-        },
-        {
-          id: 'demo-idea-2',
-          product_name: 'Self-Watering Hanging Planter Pod',
-          description: 'Repurpose plastic bottles into sub-irrigated vertical planters for herbs and succulents.',
-          difficulty: 'Easy',
-          materials: ['Plastic Bottle', 'Cotton Wick', 'Potting Soil', 'Hemp String'],
-          tools: ['Scissors', 'Hole Punch'],
-          instructions: [
-            'Cut the plastic bottle in half horizontally.',
-            'Invert the top neck into the bottom reservoir base.',
-            'Thread a cotton wick through the bottle cap hole into water base.',
-            'Fill top with soil and plant your seeds or herbs.'
-          ],
-          estimated_time: '30 minutes',
-          cost: 30,
-          selling_price: 150,
-          profit: 120,
-        }
-      ];
-
-      const demoBusiness: BusinessAnalysisResult = {
-        production_cost: 80,
-        additional_cost: 40,
-        suggested_selling_price: 300,
-        estimated_profit: 180,
-        profit_margin: 60.0,
-        market_demand: 'High',
-        potential_buyers: ['Eco-conscious Homeowners', 'Boutique Gift Stores', 'Interior Decorators'],
-        product_ideas: demoIdeas,
-      };
-
-      setAnalysisResult(demoAnalysis);
-      setCreativeIdeas(demoIdeas);
-      setBusinessData(demoBusiness);
-      setIsAnalyzing(false);
-      showToast('Demo AI Analysis Loaded Successfully!', 'success');
-    }, 1000);
   };
 
   const handleModeSwitch = async (mode: 'creative' | 'business') => {
@@ -184,8 +133,14 @@ export default function UploadPage() {
     setIsAnalyzing(true);
     try {
       if (mode === 'creative') {
-        const ideas = await generateCreativeIdeas(analysisResult.detectedMaterial, analysisResult.wasteCategory, userApiKey);
+        const [ideas, tutorials] = await Promise.all([
+          generateCreativeIdeas(analysisResult.detectedMaterial, analysisResult.wasteCategory, userApiKey),
+          recommendedTutorials.length === 0
+            ? fetchTutorialRecommendations(analysisResult.detectedMaterial, analysisResult.possibleReusableMaterials?.[0] || 'DIY Upcycling', 'creative')
+            : Promise.resolve(recommendedTutorials),
+        ]);
         setCreativeIdeas(ideas);
+        if (tutorials.length > 0) setRecommendedTutorials(tutorials);
       } else {
         const biz = await generateBusinessAnalysis(analysisResult.detectedMaterial, analysisResult.wasteCategory, userApiKey);
         setBusinessData(biz);
@@ -200,47 +155,47 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       {/* Header */}
       <div className="text-center space-y-2 max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
-          <Sparkles className="w-4 h-4 text-emerald-400" />
-          <span>Multimodal Vision AI</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+          <Sparkles className="w-4 h-4 text-emerald-600" />
+          <span>Multimodal Vision AI Scanner</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-white">Upload & Analyze Waste</h1>
-        <p className="text-xs sm:text-sm text-emerald-200/70">
-          Upload an image of plastic, glass, cardboard, fabric, or coconut waste to receive instant AI material classification and upcycling workflows.
+        <h1 className="text-3xl sm:text-4xl font-black text-charcoal-900">Upload & Analyze Waste</h1>
+        <p className="text-xs sm:text-sm text-charcoal-500">
+          Upload any photo of discarded plastic, glass, cardboard, fabric, or organic waste to extract its Waste DNA, Rescue Score, and upcycling opportunities.
         </p>
 
         <button
           onClick={() => setShowKeyInput(!showKeyInput)}
-          className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-semibold pt-1"
+          className="inline-flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-semibold pt-1"
         >
           <Key className="w-3.5 h-3.5" />
-          <span>{userApiKey ? 'Gemini API Key Configured ✓' : 'Configure Gemini API Key'}</span>
+          <span>{userApiKey ? 'Gemini API Key Configured ✓' : 'Configure Custom Gemini API Key'}</span>
         </button>
       </div>
 
       {/* Optional Gemini API Key Bar */}
       {showKeyInput && (
-        <div className="max-w-2xl mx-auto p-6 rounded-2xl bg-emerald-900/60 border border-emerald-700/80 space-y-3 shadow-xl">
+        <div className="max-w-2xl mx-auto p-6 rounded-3xl bg-white border border-charcoal-200 shadow-soft space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-bold text-white flex items-center gap-2">
-              <Key className="w-4 h-4 text-emerald-400" />
-              <span>Google Gemini AI API Key</span>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal-900 flex items-center gap-2">
+              <Key className="w-4 h-4 text-emerald-700" />
+              <span>Google Gemini Vision API Key (Optional)</span>
             </h4>
             <a
               href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noreferrer"
-              className="text-xs font-semibold text-emerald-400 hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-emerald-700 hover:underline flex items-center gap-1"
             >
-              <span>Get Free Key from Google</span>
+              <span>Get Free Key</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
-          <p className="text-xs text-emerald-200/70">
-            Enter your Google Gemini API key below to run live computer vision analysis, or set <code className="text-white">AI_API_KEY</code> in <code className="text-white">.env.local</code>.
+          <p className="text-xs text-charcoal-500">
+            Enter your free Google Gemini API key below for custom multimodal inference, or rely on our built-in intelligent engine.
           </p>
           <div className="flex gap-2">
             <input
@@ -248,86 +203,54 @@ export default function UploadPage() {
               placeholder="AIzaSy..."
               value={userApiKey}
               onChange={(e) => setUserApiKey(e.target.value)}
-              className="flex-1 bg-emerald-950 border border-emerald-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"
+              className="flex-1 bg-charcoal-50 border border-charcoal-200 rounded-xl px-3.5 py-2 text-xs text-charcoal-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
             />
             <button
               onClick={() => {
                 saveApiKey(userApiKey);
                 setShowKeyInput(false);
               }}
-              className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs flex items-center gap-1"
+              className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 btn-press"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>Save Key</span>
+              <span>Save</span>
             </button>
           </div>
         </div>
       )}
 
       {/* Upload Zone */}
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-3xl mx-auto">
         <UploadZone
           onImageSelected={(img) => setSelectedImage(img)}
           onAnalyze={handleRunAnalysis}
           isAnalyzing={isAnalyzing}
         />
-
-        {/* Demo Analysis Trigger Button */}
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={handleRunDemoAnalysis}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-900/60 border border-emerald-700 text-emerald-200 hover:bg-emerald-800 text-xs font-bold transition-all"
-          >
-            <Play className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Test Waste Flow (Demo AI Analysis Mode)</span>
-          </button>
-        </div>
       </div>
 
       {/* Error State Banner */}
       {errorState && (
-        <div className="max-w-3xl mx-auto p-5 rounded-2xl bg-red-950/90 border border-red-800 text-red-100 text-sm space-y-4 shadow-xl">
+        <div className="max-w-3xl mx-auto p-5 rounded-3xl bg-rose-50 border border-rose-200 text-rose-900 text-xs space-y-3 shadow-soft">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-              <span className="font-bold text-base">{errorState}</span>
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+              <span className="font-bold text-sm">{errorState}</span>
             </div>
             <button
               onClick={handleRunAnalysis}
-              className="px-4 py-1.5 rounded-lg bg-red-900 hover:bg-red-800 text-xs font-bold flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl bg-rose-200 hover:bg-rose-300 text-rose-950 text-xs font-bold flex items-center gap-1 btn-press"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Retry</span>
             </button>
-          </div>
-
-          <div className="pt-3 border-t border-red-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <span className="text-red-200/80">
-              No API key set? Enter a key above or try the explicit demo scan.
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowKeyInput(true)}
-                className="px-3 py-1.5 rounded-lg bg-emerald-900 border border-emerald-700 text-emerald-200 font-bold hover:bg-emerald-800"
-              >
-                + Add API Key
-              </button>
-              <button
-                onClick={handleRunDemoAnalysis}
-                className="px-3 py-1.5 rounded-lg bg-emerald-500 text-emerald-950 font-bold hover:bg-emerald-400"
-              >
-                Run Demo Scan
-              </button>
-            </div>
           </div>
         </div>
       )}
 
       {/* AI Analysis Results Section */}
       {analysisResult && (
-        <div className="space-y-10 pt-4">
-          <div className="max-w-3xl mx-auto">
+        <div className="space-y-8 pt-4">
+          <div className="max-w-4xl mx-auto">
             <AIAnalysisCard
               analysis={analysisResult}
               activeMode={activeMode}
@@ -335,12 +258,14 @@ export default function UploadPage() {
             />
           </div>
 
-          {/* Mode Display Content */}
+          {/* Mode Specific Results */}
           {activeMode === 'creative' ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-emerald-800/80 pb-3">
-                <h3 className="text-xl font-extrabold text-white">🎨 Creative DIY Upcycling Ideas</h3>
-                <span className="text-xs text-emerald-400 font-semibold">{creativeIdeas.length} Product Tutorials</span>
+            <div className="space-y-6 max-w-6xl mx-auto">
+              <div className="flex items-center justify-between border-b border-charcoal-200 pb-3">
+                <h3 className="text-xl font-black text-charcoal-900">🎨 Creative DIY Upcycling Blueprints</h3>
+                <span className="text-xs text-emerald-800 font-bold bg-emerald-50 px-3 py-1 rounded-full">
+                  {creativeIdeas.length} Personalized Guides
+                </span>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -350,10 +275,12 @@ export default function UploadPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between border-b border-emerald-800/80 pb-3">
-                <h3 className="text-xl font-extrabold text-white">💰 Business Valuation & Market Analysis</h3>
-                <span className="text-xs text-emerald-400 font-semibold">Commercial Feasibility</span>
+            <div className="space-y-8 max-w-6xl mx-auto">
+              <div className="flex items-center justify-between border-b border-charcoal-200 pb-3">
+                <h3 className="text-xl font-black text-charcoal-900">💰 Commercial Feasibility & Market Valuation</h3>
+                <span className="text-xs text-emerald-800 font-bold bg-emerald-50 px-3 py-1 rounded-full">
+                  Economic Projections
+                </span>
               </div>
 
               {businessData && <BusinessAnalysisCard business={businessData} />}
@@ -361,8 +288,19 @@ export default function UploadPage() {
               {/* Real-time Profit Calculator */}
               <ProfitCalculator
                 initialMaterialCost={businessData?.production_cost || 40}
-                initialAdditionalCost={businessData?.additional_cost || 40}
+                initialAdditionalCost={businessData?.additional_cost || 30}
                 initialSellingPrice={businessData?.suggested_selling_price || 300}
+              />
+            </div>
+          )}
+
+          {/* Dedicated YouTube DIY Video Tutorials Section */}
+          {recommendedTutorials.length > 0 && (
+            <div className="max-w-6xl mx-auto pt-4">
+              <TutorialSection
+                tutorials={recommendedTutorials}
+                materialName={analysisResult.detectedMaterial}
+                productName={creativeIdeas[0]?.product_name || analysisResult.detectedMaterial}
               />
             </div>
           )}
